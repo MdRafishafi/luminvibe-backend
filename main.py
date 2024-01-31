@@ -11,6 +11,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+
 # User model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -23,10 +24,12 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
 # User loader
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 # Sign Up API
 @app.route('/signup', methods=['POST'])
@@ -42,6 +45,7 @@ def signup():
     db.session.commit()
     return jsonify({'message': 'User created successfully'}), 201
 
+
 # Log In API
 @app.route('/login', methods=['POST'])
 def login():
@@ -52,6 +56,7 @@ def login():
         return jsonify({'message': 'Logged in successfully'}), 200
     return jsonify({'message': 'Invalid email or password'}), 401  # Adjusted message
 
+
 # Log Out API
 @app.route('/logout')
 @login_required
@@ -59,8 +64,9 @@ def logout():
     logout_user()
     return jsonify({'message': 'Logged out successfully'}), 200
 
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(host='213.52.128.127', port=6060, debug=True)
 
