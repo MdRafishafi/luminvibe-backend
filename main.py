@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import json
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
+import requests
 import environment as env
+from bs4 import BeautifulSoup
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SECRET_KEY'] = 'your-secret-key'
@@ -65,8 +69,40 @@ def logout():
     return jsonify({'message': 'Logged out successfully'}), 200
 
 
+# Price API route
+@app.route('/price/<item_name>')
+def get_price(item_name):
+    price_item = {}
+    try:
+        # Send a GET request to the URL
+        response = requests.get(f"{env.ALDI_URL}={item_name}")
+        # Parse the HTML content of the page
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Find the 'searchResults' div
+        search_results_div = soup.find(id='searchResults')
+
+        # Extract the 'data-context' attribute, which is a JSON string
+        data_context_json = search_results_div['data-context']
+
+        # Parse the JSON string into a Python dictionary
+        data_context = json.loads(data_context_json)
+
+        # Extract the first four items from the SearchResults list
+        first_four_items = data_context['SearchResults'][:4]
+
+        # Iterate through the first four items and print their details
+        for item in first_four_items:
+            name = item['FullDisplayName']
+            quantity = item['SizeVolume']
+            price = item['ListPrice']
+            print(f"Name: {name}, Quantity: {quantity}, Price: £{price}")
+        return jsonify(), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(host=env.SERVER, port=6060, debug=True)
-
